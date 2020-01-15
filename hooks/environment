@@ -2,6 +2,11 @@
 
 set -euo pipefail
 
+ignore_unset="false"
+if [[ $BUILDKITE_PLUGIN_METADATA_ENV_IGNORE_UNSET == "true" ]] ; then
+  ignore_unset="true"
+fi
+
 main() {
   echo "Reading meta-data ..."
   env_list=$(plugin_read_list | evaluate_key_item)
@@ -52,8 +57,13 @@ function read_meta_data() {
     echo "${mapped_key}=(${#value} chars)" >&2;
     echo "${mapped_key}=${value}"
   else
-    echo "Could not read meta-data: ${meta_data_key}" >&2;
-    exit 1
+    if [[ "$ignore_unset" == true ]] ; then
+      echo "${mapped_key} not set as meta-data. Setting value of ${mapped_key} to the empty string ''.">&2
+      echo "${mapped_key}=''"
+    else
+      echo "Could not read meta-data: ${meta_data_key}" >&2;
+      exit 1
+    fi
   fi
 }
 
